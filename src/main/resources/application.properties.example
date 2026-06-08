@@ -1,0 +1,21 @@
+# Banco de dados
+spring.datasource.url=jdbc:postgresql://localhost:5432/pontofacil
+spring.datasource.username=seu_usuario
+spring.datasource.password=sua_senha
+
+# JPA
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=false
+
+# Flyway
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+
+# Servidor
+server.port=8080
+
+# JWT
+app.jwt.secret=seu_secret_aqui
+app.jwt.expiration=86400000
