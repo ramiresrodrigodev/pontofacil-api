@@ -1,11 +1,15 @@
 package dev.rodrigo.pontofacil.api.funcionario;
 
+import dev.rodrigo.pontofacil.domain.folga.FolgaRepository;
 import dev.rodrigo.pontofacil.domain.funcionario.Contrato;
 import dev.rodrigo.pontofacil.domain.funcionario.Funcionario;
 import dev.rodrigo.pontofacil.domain.funcionario.FuncionarioRepository;
+import dev.rodrigo.pontofacil.domain.ponto.PontoRepository;
 import dev.rodrigo.pontofacil.domain.usuario.Usuario;
+import dev.rodrigo.pontofacil.shared.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,6 +18,8 @@ import java.util.List;
 public class FuncionarioService {
 
     private final FuncionarioRepository repository;
+    private final PontoRepository pontoRepository;
+    private final FolgaRepository folgaRepository;
 
     public List<FuncionarioResponse> listar(Usuario usuarioLogado) {
         return repository.findByEmpresaId(usuarioLogado.getEmpresa().getId())
@@ -41,7 +47,7 @@ public class FuncionarioService {
     public FuncionarioResponse atualizar(Long id, FuncionarioRequest request, Usuario usuarioLogado) {
         var f = repository.findById(id)
                 .filter(func -> func.getEmpresa().getId().equals(usuarioLogado.getEmpresa().getId()))
-                .orElseThrow(() -> new RuntimeException("Funcionário não encontrado"));
+                .orElseThrow(() -> ApiException.naoEncontrado("Funcionário não encontrado"));
         f.setNome(request.nome());
         f.setCargo(request.cargo());
         f.setDepartamento(request.departamento());
@@ -55,10 +61,14 @@ public class FuncionarioService {
         return FuncionarioResponse.de(repository.save(f));
     }
 
+    @Transactional
     public void deletar(Long id, Usuario usuarioLogado) {
         var f = repository.findById(id)
                 .filter(func -> func.getEmpresa().getId().equals(usuarioLogado.getEmpresa().getId()))
-                .orElseThrow(() -> new RuntimeException("Funcionário não encontrado"));
+                .orElseThrow(() -> ApiException.naoEncontrado("Funcionário não encontrado"));
+        // Remove registros dependentes antes do funcionário (evita violacao de FK)
+        pontoRepository.deleteByFuncionarioId(f.getId());
+        folgaRepository.deleteByFuncionarioId(f.getId());
         repository.delete(f);
     }
 }

@@ -2,10 +2,12 @@ package dev.rodrigo.pontofacil.domain.usuario;
 
 import dev.rodrigo.pontofacil.domain.empresa.Empresa;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "usuario")
 public class Usuario {

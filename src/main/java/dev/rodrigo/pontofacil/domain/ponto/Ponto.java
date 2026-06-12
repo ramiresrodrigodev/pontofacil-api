@@ -2,12 +2,14 @@ package dev.rodrigo.pontofacil.domain.ponto;
 
 import dev.rodrigo.pontofacil.domain.funcionario.Funcionario;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "ponto")
 public class Ponto {

@@ -2,6 +2,7 @@ package dev.rodrigo.pontofacil.api.auth;
 
 import dev.rodrigo.pontofacil.domain.usuario.UsuarioRepository;
 import dev.rodrigo.pontofacil.security.JwtService;
+import dev.rodrigo.pontofacil.shared.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,10 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         var usuario = usuarioRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> ApiException.naoAutorizado("E-mail ou senha inválidos"));
 
         if (!passwordEncoder.matches(request.senha(), usuario.getSenha())) {
-            throw new RuntimeException("Senha incorreta");
+            throw ApiException.naoAutorizado("E-mail ou senha inválidos");
         }
 
         String token = jwtService.gerarToken(usuario.getEmail());
