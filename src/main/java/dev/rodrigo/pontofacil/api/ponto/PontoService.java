@@ -1,11 +1,14 @@
 package dev.rodrigo.pontofacil.api.ponto;
 
+import dev.rodrigo.pontofacil.domain.empresa.Empresa;
+import dev.rodrigo.pontofacil.domain.empresa.EmpresaRepository;
 import dev.rodrigo.pontofacil.domain.funcionario.Funcionario;
 import dev.rodrigo.pontofacil.domain.funcionario.FuncionarioRepository;
 import dev.rodrigo.pontofacil.domain.ponto.Ponto;
 import dev.rodrigo.pontofacil.domain.ponto.PontoRepository;
 import dev.rodrigo.pontofacil.domain.usuario.Usuario;
 import dev.rodrigo.pontofacil.shared.ApiException;
+import dev.rodrigo.pontofacil.shared.GeoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,7 @@ public class PontoService {
 
     private final PontoRepository pontoRepository;
     private final FuncionarioRepository funcionarioRepository;
+    private final EmpresaRepository empresaRepository;
 
     @Transactional(readOnly = true)
     public List<PontoResponse> listar(Usuario usuarioLogado) {
@@ -36,6 +40,8 @@ public class PontoService {
         Funcionario funcionario = buscarFuncionarioDaEmpresa(request.funcionarioId(), usuarioLogado);
         LocalDate hoje = LocalDate.now();
         LocalTime agora = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
+
+        validarGeofence(usuarioLogado, request);
 
         Ponto ponto = pontoRepository.findByFuncionarioIdAndData(funcionario.getId(), hoje)
                 .orElseGet(() -> {
@@ -68,8 +74,35 @@ public class PontoService {
             default -> throw ApiException.requisicaoInvalida("Tipo de marcação inválido: " + request.tipo());
         }
 
+        if (request.latitude() != null && request.longitude() != null) {
+            ponto.setLatitude(request.latitude());
+            ponto.setLongitude(request.longitude());
+        }
+
         ponto.setStatus(ponto.getSaida() != null ? "COMPLETO" : "INCOMPLETO");
         return PontoResponse.de(pontoRepository.save(ponto));
+    }
+
+    /** Valida a cerca virtual da empresa, se configurada. */
+    private void validarGeofence(Usuario usuarioLogado, MarcarPontoRequest request) {
+        Empresa empresa = empresaRepository.findById(usuarioLogado.getEmpresa().getId())
+                .orElseThrow(() -> ApiException.naoEncontrado("Empresa não encontrada"));
+
+        if (!empresa.temGeofence()) return; // cerca desativada → sem restrição
+
+        if (request.latitude() == null || request.longitude() == null) {
+            throw ApiException.requisicaoInvalida("Ative a localização do dispositivo para registrar o ponto.");
+        }
+
+        double dist = GeoUtil.distanciaMetros(
+                empresa.getLatitude(), empresa.getLongitude(),
+                request.latitude(), request.longitude());
+
+        if (dist > empresa.getRaioMetros()) {
+            throw ApiException.requisicaoInvalida(String.format(
+                    "Fora do local permitido: você está a %.0f m da empresa (limite de %d m).",
+                    dist, empresa.getRaioMetros()));
+        }
     }
 
     @Transactional

@@ -15,7 +15,9 @@ public record PontoResponse(
         LocalTime alRetorno,
         LocalTime saida,
         String status,
-        String observacao
+        String observacao,
+        Double latitude,
+        Double longitude
 ) {
     public static PontoResponse de(Ponto p) {
         return new PontoResponse(
@@ -28,7 +30,9 @@ public record PontoResponse(
                 p.getAlRetorno(),
                 p.getSaida(),
                 p.getStatus(),
-                p.getObservacao()
+                p.getObservacao(),
+                p.getLatitude(),
+                p.getLongitude()
         );
     }
 }

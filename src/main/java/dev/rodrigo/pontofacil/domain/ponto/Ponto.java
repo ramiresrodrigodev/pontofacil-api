@@ -40,6 +40,11 @@ public class Ponto {
 
     private String observacao;
 
+    // Localização capturada na batida (geofence)
+    private Double latitude;
+
+    private Double longitude;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
